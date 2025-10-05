@@ -8,26 +8,29 @@ class DecompCircuit:
             
         else:
             raise TypeError("not a cirq.Circuit object!")
-    
 
     def decomp(self):
         for i in range(len(self.cirT)):
-            
             if self.foundTgateInMoment(self.cirT[i]):
-                print("starting T gate decomposition into (aI + bZ).")
-                return (self.replaceTgates(self.cirT, cirq.I), self.replaceTgates(self.cirT, cirq.Z) )
-        raise Exception("no T gate found.")
+              print("starting T gate decomposition into (aI + bZ).")
+              return self.RecDecompGate(self.cirT, i, cirq.I) + self.RecDecompGate(self.cirT, i, cirq.Z)
+        
+        raise Exception("no T gate found.") 
 
+    def RecDecompGate(self, newCir, pos, gate, phase = 1):
+
+        tempPhaseCir = self.replaceTgates(newCir, pos, gate)
+        newPhase = phase * tempPhaseCir.getPhase()
+        for i in range(len(tempPhaseCir.getCir())):
+            if self.foundTgateInMoment(tempPhaseCir.getCir()[i]):
+              print("starting T gate decomposition into (aI + bZ).")
+              return self.RecDecompGate(tempPhaseCir.getCir(), i, cirq.I, newPhase) + self.RecDecompGate(tempPhaseCir.getCir(), i, cirq.Z, newPhase)
+        tempPhaseCir.setPhase(newPhase)
+        return [tempPhaseCir]
     
-    def foundTgateInMoment(self,moment):
-        for operation in moment:
-                if isinstance(operation.gate, cirq.ZPowGate):
-                    if operation.gate.exponent == 0.25:
-                        return True
-        return False
 
-    def replaceTgates(self, cir, gate):
-        sumOfTgates = 0
+    def replaceTgates(self, cir, pos, gate):
+
         new_moments = []
         if isinstance(gate, cirq.ZPowGate):
             phase = (1 - np.exp(1j*(np.pi/4)))/2
@@ -38,11 +41,23 @@ class DecompCircuit:
             raise Exception("wrong gate as an input. Only I and Z gates are accepted")
         
         for i in range(len(cir)):
-            numOfTgates, moment = self.switchMoment(cir[i],gate)
-            sumOfTgates = sumOfTgates + numOfTgates
-            new_moments.append(moment)
 
-        return phase**sumOfTgates, cirq.Circuit(new_moments)
+            if i == pos:
+                moment = self.switchMoment(cir[i],gate)
+
+                new_moments.append(moment)
+
+            else:
+                new_moments.append(cir[i])
+        return PhaseCircuit(phase, cirq.Circuit(new_moments))
+
+    def foundTgateInMoment(self,moment):
+        for operation in moment:
+                if isinstance(operation.gate, cirq.ZPowGate):
+                    if operation.gate.exponent == 0.25:
+                        return True
+        return False
+
 
     def switchMoment(self, moment, gate):
         new_ops = []
@@ -50,20 +65,31 @@ class DecompCircuit:
         for op in moment:
             
             if isinstance(op.gate, cirq.ZPowGate):
-                    if op.gate.exponent == 0.25:
+                    if op.gate.exponent == 0.25 and numOfTgates == 0:
                         new_ops.append(gate(op.qubits[0]))
-                        numOfTgates = numOfTgates + 1
+                        numOfTgates = 1
                         continue
 
             new_ops.append(op)
         
-        return numOfTgates, cirq.Moment(new_ops)
-
-                        
+        return cirq.Moment(new_ops)
+    
+    
+class PhaseCircuit():
+    def __init__(self,phase,cir):
+        if isinstance(cir, cirq.Circuit):
+            self.cir = cir
+            self.phase = phase
+        else:
+            raise TypeError("not a cirq.Circuit object!")
         
+    def getCir(self):
+        return self.cir
 
-
-
+    def getPhase(self):
+        return self.phase
+    def setPhase(self,phase):
+        self.phase = phase
 
 
 
