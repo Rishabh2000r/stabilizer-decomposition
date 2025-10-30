@@ -1,5 +1,5 @@
 import cirq
-from decompCircuit import DecompCircuit
+from tgadget import tGadget
 import numpy as np
 
 
@@ -30,25 +30,10 @@ circuit = cirq.Circuit(
     cirq.T(q2)
 )
 
-test = (1 + np.exp(1j*(np.pi/4)))/2
-#print(test**2)
+print(circuit)
 
-oldUnitary = circuit.unitary()
-
-
-newCir = DecompCircuit(circuit)
-listPhaseCircuits = newCir.decomp()
-lenOldUnit = len(listPhaseCircuits[0].getCir().unitary())
-newUnitary = np.zeros((lenOldUnit,lenOldUnit))
-
-print("________________________")
-for pc in listPhaseCircuits:
-    #print(pc.getPhase())
-    #print(pc.getCir())
-
-    newUnitary = newUnitary + (pc.getPhase()*pc.getCir().unitary())
-
-    #print("________________________")
-
-
-compareUnitary(newUnitary,oldUnitary)
+print("---------")
+tg = tGadget(circuit)
+tg.addTGadget()
+newCir = tg.getCir()
+print(newCir)
