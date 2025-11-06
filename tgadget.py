@@ -5,6 +5,7 @@ class tGadget():
     def __init__(self,cir):
         if isinstance(cir, cirq.Circuit):
             self.cir = cir
+            self.NoQubits = len(cir.all_qubits())
         else:
             raise TypeError("not a cirq.Circuit object!")
 
@@ -14,28 +15,45 @@ class tGadget():
     
 
     def addTGadget(self):
-        rangetemp = len(self.cir)
-        for i in range(rangetemp):
+        print(self.cir[1])
+ 
+        i = 0
+        while(i<len(self.cir)):
+            print("+++++")
             print(i)
-            if self.foundTgateInMoment(self.cir[i]):
-            
-                print("adding T gadget.")
+
+            for n in range(self.numOfTGatesInMoment(self.cir[i])):
                 self.initTgadget(i)
-        
+                print(f"init T at i{i}")
+
+            i+=1
+         
+
+                
+
+
+    def numOfTGatesInMoment(self,moment):
+        totalTGates = 0
+        for operation in moment:
+                print(f"operation: {operation}")
+                if isinstance(operation.gate, cirq.ZPowGate) and (operation.qubits[0].x < self.NoQubits):
+                    if operation.gate.exponent == 0.25:
+                        totalTGates+=1
+        return totalTGates
 
     
 
     def switchMoment(self, moment, ancilla):
-        new_ops = []
         numOfTgates = 0
         prevOps = []
         nextOps = []
         for op in moment:
             found = False
-            if isinstance(op.gate, cirq.ZPowGate):
+            if isinstance(op.gate, cirq.ZPowGate) and (op.qubits[0].x < self.NoQubits):
                     if op.gate.exponent == 0.25 and numOfTgates == 0:
-                        m1 = cirq.Moment(cirq.T(ancilla))                             #ToDo
-                        m2 = cirq.Moment(cirq.CX(op.qubits[0], ancilla))
+                        m1 = cirq.Moment(cirq.H(ancilla))    
+                        m2 = cirq.Moment(cirq.T(ancilla))                             #ToDo
+                        m3 = cirq.Moment(cirq.CX(op.qubits[0], ancilla))
                                     #need alternative?
                         m4 = cirq.Moment(cirq.measure(ancilla, key = 'm'),cirq.S(op.qubits[0]).with_classical_controls('m'))
                         numOfTgates = 1
@@ -47,7 +65,7 @@ class tGadget():
             else:
                 prevOps.append(op)
         if numOfTgates > 0:
-            return [cirq.Moment(prevOps), m1, m2,  m4 ,cirq.Moment(nextOps)]
+            return [cirq.Moment(prevOps), m1, m2, m3, m4, cirq.Moment(nextOps)]
         else:
             raise Exception
 
@@ -69,9 +87,3 @@ class tGadget():
                 new_moments.append(self.cir[i])
         self.cir = cirq.Circuit(new_moments)
 
-    def foundTgateInMoment(self,moment):
-        for operation in moment:
-                if isinstance(operation.gate, cirq.ZPowGate):
-                    if operation.gate.exponent == 0.25:
-                        return True
-        return False

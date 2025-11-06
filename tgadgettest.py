@@ -27,6 +27,8 @@ circuit = cirq.Circuit(
     cirq.T(q1),
     cirq.T(q3),
     cirq.Y(q1),
+    cirq.T(q2),
+    cirq.X(q3),
     cirq.T(q2)
 )
 
@@ -37,3 +39,4 @@ tg = tGadget(circuit)
 tg.addTGadget()
 newCir = tg.getCir()
 print(newCir)
+print(newCir[3])
