@@ -1,5 +1,6 @@
 import cirq
 from tgadget import tGadget
+from zerosim import AlwaysZeroSimulator
 import numpy as np
 
 
@@ -29,7 +30,8 @@ circuit = cirq.Circuit(
     cirq.Y(q1),
     cirq.T(q2),
     cirq.X(q3),
-    cirq.T(q2)
+    cirq.T(q2),
+    cirq.M(q0)
 )
 
 print(circuit)
@@ -39,4 +41,18 @@ tg = tGadget(circuit)
 tg.addTGadget()
 newCir = tg.getCir()
 print(newCir)
-print(newCir[3])
+print("---------------")
+
+print(circuit)
+
+tgNew = tGadget(circuit)
+tgNew.addMulitQubitMagicState()
+newCir = tgNew.getCir()
+print(newCir)
+
+simulator = AlwaysZeroSimulator()
+
+
+result = simulator.run(newCir, repetitions=100)
+
+print(result)
